@@ -1,6 +1,6 @@
 """Auto-reply message handler for the Fiverr agent.
 
-Consumes :class:`app.services.ollama_service.OllamaService` as an LLM fallback.
+Consumes :class:`app.services.llm_service.LLMService` as an LLM fallback.
 
 Functions exposed:
 - auto_reply(message_content, gig_context=None) -> str
@@ -11,7 +11,7 @@ Functions exposed:
 import logging
 from typing import Optional
 
-from app.services.ollama_service import OllamaService
+from app.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +63,13 @@ def _rule_based_reply(message_content: str) -> Optional[str]:
 async def auto_reply(
     message_content: str,
     gig_context: Optional[dict] = None,
-    ollama_service: Optional[OllamaService] = None,
+    llm_service: Optional[LLMService] = None,
 ) -> str:
     """Produce an auto-reply for *message_content*.
 
     Strategy:
       1. Rule-based match against ``COMMON_REPLIES`` keywords.
-      2. Fallback to the Ollama LLM (if *ollama_service* is provided and
+      2. Fallback to the NVIDIA LLM (if *llm_service* is provided and
          reachable), prompted with *gig_context*.
       3. Fallback to a polite generic reply.
 
@@ -80,12 +80,12 @@ async def auto_reply(
     if rule_reply:
         return rule_reply
 
-    # 2. Ollama LLM fallback.
-    ollama = ollama_service or OllamaService()
+    # 2. NVIDIA LLM fallback.
+    llm = llm_service or LLMService()
     try:
-        healthy = await ollama.health_check()
+        healthy = await llm.health_check()
     except Exception as exc:  # noqa: BLE001 — treat unreachable as fallback
-        logger.warning("Ollama health check failed: %s", exc)
+        logger.warning("NVIDIA health check failed: %s", exc)
         healthy = False
 
     if healthy:
@@ -104,7 +104,7 @@ async def auto_reply(
                 f"{context_str}\n"
                 "Write a short reply."
             )
-            reply = await ollama.generate(
+            reply = await llm.generate(
                 [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -115,7 +115,7 @@ async def auto_reply(
             if reply and reply.strip():
                 return reply.strip()
         except Exception as exc:  # noqa: BLE001 — fall back to generic
-            logger.warning("Ollama reply generation failed: %s", exc)
+            logger.warning("NVIDIA reply generation failed: %s", exc)
 
     # 3. Generic fallback.
     return (

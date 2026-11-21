@@ -9,7 +9,7 @@ export default function Settings() {
   const [form, setForm] = useState({
     rate_limit_per_hour: String(data?.rate_limit_per_hour ?? 3),
     max_gigs_per_run: String(data?.max_gigs_per_run ?? 2),
-    ollama_base_url: data?.ollama_base_url ?? 'http://localhost:11434/v1',
+    nvidia_base_url: data?.nvidia_base_url ?? 'https://integrate.api.nvidia.com/v1',
     discord_configured: Boolean(data?.discord_configured),
   });
 
@@ -28,7 +28,7 @@ export default function Settings() {
     updateSettings.mutate({
       rate_limit_per_hour: Number(form.rate_limit_per_hour),
       max_gigs_per_run: Number(form.max_gigs_per_run),
-      ollama_base_url: form.ollama_base_url,
+      nvidia_base_url: form.nvidia_base_url,
     });
   };
 
@@ -38,7 +38,7 @@ export default function Settings() {
         <div>
           <h1 className="page-title">Settings</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Configure rate limits, gigs per run, Ollama, and notifications.
+            Configure rate limits, gigs per run, NVIDIA, and notifications.
           </p>
         </div>
       </div>
@@ -90,17 +90,17 @@ export default function Settings() {
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="text-sm font-semibold text-gray-700">AI provider</h2>
               <p className="text-xs text-gray-500 mt-1">
-                Base URL of the local Ollama API.
+                Base URL of the NVIDIA API.
               </p>
             </div>
             <div className="px-6 py-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ollama base URL
+                NVIDIA base URL
               </label>
               <input
-                name="ollama_base_url"
+                name="nvidia_base_url"
                 type="url"
-                value={form.ollama_base_url}
+                value={form.nvidia_base_url}
                 onChange={handleChange}
                 className="input"
               />

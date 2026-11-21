@@ -1,6 +1,6 @@
 """Tests for the message handler.
 
-Ollama service is mocked so no real LLM calls are made.
+NVIDIA LLM service is mocked so no real LLM calls are made.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,12 +10,12 @@ import pytest
 from app.services import message_handler
 
 
-def _make_mock_ollama(reply_content="This is an LLM-generated reply."):
-    """Build an OllamaService mock whose generate() returns *reply_content*."""
-    mock_ollama = AsyncMock()
-    mock_ollama.health_check = AsyncMock(return_value=True)
-    mock_ollama.generate = AsyncMock(return_value=reply_content)
-    return mock_ollama
+def _make_mock_llm(reply_content="This is an LLM-generated reply."):
+    """Build an LLMService mock whose generate() returns *reply_content*."""
+    mock_llm = AsyncMock()
+    mock_llm.health_check = AsyncMock(return_value=True)
+    mock_llm.generate = AsyncMock(return_value=reply_content)
+    return mock_llm
 
 
 @pytest.mark.asyncio
@@ -43,35 +43,35 @@ async def test_auto_reply_rule_based_revision():
 
 
 @pytest.mark.asyncio
-async def test_auto_reply_uses_ollama_fallback(mocker):
-    """When no rule matches, fall back to Ollama LLM."""
-    mock_ollama = _make_mock_ollama("LLM says hello.")
+async def test_auto_reply_uses_llm_fallback(mocker):
+    """When no rule matches, fall back to NVIDIA LLM."""
+    mock_llm = _make_mock_llm("LLM says hello.")
     reply = await message_handler.auto_reply(
         "Something completely unrelated to keywords.",
-        ollama_service=mock_ollama,
+        llm_service=mock_llm,
     )
     assert reply == "LLM says hello."
-    mock_ollama.generate.assert_awaited_once()
+    mock_llm.generate.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_auto_reply_ollama_unreachable_uses_generic(mocker):
-    """When Ollama is unreachable, fall back to a generic reply."""
-    mock_ollama = _make_mock_ollama("unused")
-    mock_ollama.health_check = AsyncMock(return_value=False)
+async def test_auto_reply_llm_unreachable_uses_generic(mocker):
+    """When NVIDIA is unreachable, fall back to a generic reply."""
+    mock_llm = _make_mock_llm("unused")
+    mock_llm.health_check = AsyncMock(return_value=False)
     reply = await message_handler.auto_reply(
-        "Something unrelated.", ollama_service=mock_ollama
+        "Something unrelated.", llm_service=mock_llm
     )
     assert "Thanks for your message" in reply
 
 
 @pytest.mark.asyncio
-async def test_auto_reply_ollama_exception_uses_generic(mocker):
-    """When Ollama raises, fall back to a generic reply."""
-    mock_ollama = AsyncMock()
-    mock_ollama.health_check = AsyncMock(side_effect=RuntimeError("down"))
+async def test_auto_reply_llm_exception_uses_generic(mocker):
+    """When NVIDIA raises, fall back to a generic reply."""
+    mock_llm = AsyncMock()
+    mock_llm.health_check = AsyncMock(side_effect=RuntimeError("down"))
     reply = await message_handler.auto_reply(
-        "Something unrelated.", ollama_service=mock_ollama
+        "Something unrelated.", llm_service=mock_llm
     )
     assert "Thanks for your message" in reply
 

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from app.api import analytics, gigs, health, logs, messages, orders, proxies, sse
+from app.api import analytics, gigs, health, logs, messages, nvidia, orders, proxies, sse
 from app.api.settings import router as settings_router
 from app.config import settings
 from app.database import init_db
@@ -24,3 +24,4 @@ app.include_router(settings_router)
 app.include_router(logs.router)
 app.include_router(sse.router)
 app.include_router(proxies.router)
+app.include_router(nvidia.router)

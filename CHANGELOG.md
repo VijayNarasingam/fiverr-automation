@@ -7,9 +7,9 @@ Initial release of the Fiverr Automation Agent — a local-first automation agen
 ### Core platform
 - FastAPI backend with async SQLAlchemy (SQLite/PostgreSQL) and Alembic database migrations
 - React dashboard served via nginx, with Vite dev server for local development
-- Ollama integration for local LLM content generation (OpenAI-compatible `/chat/completions`)
-- Docker Compose deployment (app, redis, ollama, frontend services)
-- Pydantic Settings configuration via `.env` (Fiverr credentials, Google Sheets, Ollama, DB, Redis, notifications, proxies, rate limits)
+- NVIDIA Nemotron integration for LLM content generation (OpenAI-compatible `/chat/completions`)
+- Docker Compose deployment (app, redis, frontend services)
+- Pydantic Settings configuration via `.env` (Fiverr credentials, Google Sheets, NVIDIA, DB, Redis, notifications, proxies, rate limits)
 - Application secret key (`SECRET_KEY`) for session/security signing
 
 ### Database models
@@ -28,7 +28,7 @@ Initial release of the Fiverr Automation Agent — a local-first automation agen
 - `BrowserService` with Playwright, stealth mode, persistent browser context, session save/load
 - `StealthManager` to reduce automation detection
 - `GigPublisher` automates Fiverr login (email + password + optional 2FA TOTP), navigates to the gig creation form, and fills out title, category, description, packages, tags, FAQs, and images
-- Content enhancement via `ContentEngine` (Jinja2 templates + Ollama LLM fallback to template-only output)
+- Content enhancement via `ContentEngine` (Jinja2 templates + NVIDIA LLM fallback to template-only output)
 - Gig templates: `gig_description.j2`, `gig_faq.j2`
 - Result persisted to database and Google Sheets; success/failure status tracked
 
@@ -39,7 +39,7 @@ Initial release of the Fiverr Automation Agent — a local-first automation agen
 ### Message handling
 - `MessageHandler` with rule-based auto-replies (requirements, deadline, revision keywords)
 - Spam keyword filtering (click here, win money, free bitcoin)
-- Ollama LLM fallback for AI-generated replies
+- NVIDIA LLM fallback for AI-generated replies
 
 ### Orchestration & scheduling
 - `Orchestrator` coordinating gig creation cycle, order sync cycle, and message cycle
@@ -66,5 +66,5 @@ Initial release of the Fiverr Automation Agent — a local-first automation agen
 - Reminders to respect Fiverr's Terms of Service and rate limits, never commit `.env` or service account keys, and review AI-generated content before publishing
 
 ### Testing
-- Test suite with `pytest`: API, models, gig publisher, message handler, order manager, proxy manager, proxy validation, sheets, analytics, notifications, ollama, orchestrator, and end-to-end gig/order flow tests
+- Test suite with `pytest`: API, models, gig publisher, message handler, order manager, proxy manager, proxy validation, sheets, analytics, notifications, nvidia (LLM service), orchestrator, and end-to-end gig/order flow tests
 - Playwright browsers required for browser automation tests

@@ -1,10 +1,11 @@
-"""Content engine: Jinja2 templates + Ollama LLM enhancement for Fiverr gigs.
+"""Content engine: Jinja2 templates + NVIDIA Nemotron LLM enhancement for Fiverr gigs.
 
-Consumes :class:`app.config.Settings` (``OLLAMA_BASE_URL``) and a row dict
-from Google Sheets. Produces enhanced gig content with the fields
-``title``, ``description``, ``faq_json``, ``tags`` and ``ab_variants``.
+Consumes :class:`app.config.Settings` (``NVIDIA_BASE_URL``,
+``NVIDIA_API_KEY``, ``NVIDIA_MODEL``) and a row dict from Google Sheets.
+Produces enhanced gig content with the fields ``title``, ``description``,
+``faq_json``, ``tags`` and ``ab_variants``.
 
-When Ollama is unavailable the engine falls back to template-only output so
+When NVIDIA is unavailable the engine falls back to template-only output so
 the pipeline never stalls on a missing LLM.
 """
 
@@ -15,7 +16,7 @@ from typing import Any
 from jinja2 import Template
 
 from app.config import settings
-from app.services.ollama_service import OllamaService
+from app.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +24,14 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
 
 class ContentEngine:
-    """Render Jinja2 templates and enhance gig content with Ollama."""
+    """Render Jinja2 templates and enhance gig content with NVIDIA Nemotron."""
 
-    def __init__(self, ollama: OllamaService | None = None):
-        self.ollama = ollama or OllamaService()
+    def __init__(self, llm: LLMService | None = None):
+        self.llm = llm or LLMService()
 
     def render_template(self, template_name: str, **vars: Any) -> str:
-        """Render *template_name* (a ``.j2`` file in ``app/templates``) with *vars*.
+        """Render *template_name* (a ``.j2`` file in ``app/templates``)
+        with *vars*.
 
         Uses Jinja2 ``from_string`` semantics: the template file is read and
         compiled with :class:`jinja2.Template`, then rendered with *vars*.
@@ -45,7 +47,7 @@ class ContentEngine:
         Combines template rendering with LLM enhancement. Fields returned:
         ``title``, ``description``, ``faq_json``, ``tags``, ``ab_variants``.
 
-        If Ollama is unreachable or any LLM call fails, falls back to the
+        If NVIDIA is unreachable or any LLM call fails, falls back to the
         template-rendered description with empty FAQs/tags.
         """
         title = row.get("title", row.get("Gig Title", "Untitled Gig"))
@@ -68,17 +70,17 @@ class ContentEngine:
         faq_json: list[dict[str, str]] = []
         tags: list[str] = []
 
-        use_llm = await self.ollama.health_check()
+        use_llm = await self.llm.health_check()
         if use_llm:
             try:
-                description = await self.ollama.polish_description(
+                description = await self.llm.polish_description(
                     rendered_description
                 )
-                faq_json = await self.ollama.generate_faq(row)
-                tags = await self.ollama.suggest_tags(row)
+                faq_json = await self.llm.generate_faq(row)
+                tags = await self.llm.suggest_tags(row)
             except Exception as exc:  # noqa: BLE001 — fall back gracefully
                 logger.warning(
-                    "Ollama enhancement failed, using template fallback: %s", exc
+                    "NVIDIA enhancement failed, using template fallback: %s", exc
                 )
                 use_llm = False
 

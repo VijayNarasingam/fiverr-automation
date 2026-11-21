@@ -6,7 +6,7 @@ export const SETTINGS_QUERY_KEY = ['settings'];
 export interface Settings {
   rate_limit_per_hour: number;
   max_gigs_per_run: number;
-  ollama_base_url: string;
+  nvidia_base_url: string;
   discord_configured: boolean;
   [key: string]: unknown;
 }

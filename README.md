@@ -1,6 +1,6 @@
 # Fiverr Automation Agent
 
-A local-first automation agent for managing Fiverr gigs, orders, and messages, with a FastAPI backend, a React dashboard, Ollama for local LLM generation, and Google Sheets integration.
+A local-first automation agent for managing Fiverr gigs, orders, and messages, with a FastAPI backend, a React dashboard, NVIDIA Nemotron for LLM generation, and Google Sheets integration.
 
 ## Quick Start
 
@@ -19,15 +19,15 @@ cp .env.example .env
 
 Edit `.env` with your Fiverr credentials, Google Sheets settings, and other configuration (see [Configuration](#configuration)).
 
-3. Start Ollama (required for the local LLM):
+3. Configure NVIDIA API (required for LLM content generation):
 
-```bash
-# With Docker Compose (ollama service is included):
-docker compose up -d ollama
+   Add your NVIDIA API key and model to `.env`:
 
-# Or install Ollama locally and run `ollama serve` + pull a model:
-# ollama pull llama3
-```
+   ```
+   NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+   NVIDIA_API_KEY=your-api-key-here
+   NVIDIA_MODEL=nemotron-3.5-super-vl-120b-a12b
+   ```
 
 4. Start all services with Docker Compose:
 
@@ -58,7 +58,9 @@ Copy `.env.example` to `.env` and set the following variables:
 | `FIVERR_2FA_SECRET` | Two-factor authentication secret | No | JBSWY3DPEHPK3PXP |
 | `GOOGLE_SHEETS_CREDENTIALS_JSON` | Google service account credentials JSON | No | `{"type": "service_account", ...}` |
 | `GOOGLE_SHEET_ID` | Target Google Sheet ID | No | `1BxiMVs0X...` |
-| `OLLAMA_BASE_URL` | Ollama API base URL | No | http://localhost:11434/v1 |
+| `NVIDIA_BASE_URL` | NVIDIA API base URL | Yes | https://integrate.api.nvidia.com/v1 |
+| `NVIDIA_API_KEY` | NVIDIA API key | Yes | |
+| `NVIDIA_MODEL` | NVIDIA model name | Yes | nemotron-3.5-super-vl-120b-a12b |
 | `DATABASE_URL` | Database connection URL | Yes | sqlite+aiosqlite:///./test.db |
 | `REDIS_URL` | Redis connection URL | No | redis://localhost:6379/0 |
 | `DISCORD_WEBHOOK_URL` | Discord notifications webhook | No | |
@@ -97,7 +99,7 @@ This tool is intended for personal productivity and account management on your o
 |---------|------|-------------|
 | `app` | 8000 | FastAPI backend API |
 | `redis` | 6379 | Redis cache / job queue |
-| `ollama` | 11434 | Local LLM server |
+| `nvidia` | NVIDIA API | LLM inference endpoint |
 | `frontend` | 5173 | React dashboard (served via nginx) |
 
 ## Development
@@ -128,12 +130,7 @@ pytest
 After you have the stack deployed, follow these steps to start using the agent:
 
 1. **Configure `.env`** — fill in `FIVERR_EMAIL`, `FIVERR_PASSWORD`, and (optionally) `FIVERR_2FA_SECRET`. See [Configuration](#configuration) and [Fiverr 2FA Setup](#fiverr-2fa-setup).
-2. **Start Ollama and pull a model** — the agent uses Ollama for local LLM content generation:
-   ```bash
-   docker compose up -d ollama
-   docker exec -it fiverr-agent-ollama-1 ollama pull hermes3:3b
-   ```
-   (Or run `ollama serve` locally and `ollama pull hermes3:3b`.)
+2. **Configure NVIDIA API** — set `NVIDIA_BASE_URL`, `NVIDIA_API_KEY`, and `NVIDIA_MODEL` in `.env` (see [Configuration](#configuration)).
 3. **Start all services:**
    ```bash
    docker compose up --build
@@ -156,7 +153,7 @@ After you have the stack deployed, follow these steps to start using the agent:
 
 | Issue | Likely cause | Fix |
 |-------|--------------|-----|
-| Ollama connection refused | Ollama not running or wrong base URL | Confirm `OLLAMA_BASE_URL` in `.env`, start Ollama (`docker compose up -d ollama` or `ollama serve`), and pull a model (`ollama pull hermes3:3b`). |
+| NVIDIA connection refused | NVIDIA API not reachable or wrong base URL | Confirm `NVIDIA_BASE_URL` in `.env`, check your `NVIDIA_API_KEY` is valid, and verify network access to the NVIDIA API endpoint. |
 | Database connection error | Wrong `DATABASE_URL` or DB not initialized | Verify `DATABASE_URL` in `.env` and run `python scripts/init_db.py`. |
 | 2FA prompt blocks login | Missing or invalid `FIVERR_2FA_SECRET` | Get a valid TOTP secret from Fiverr and set it in `.env`. See [Fiverr 2FA Setup](#fiverr-2fa-setup). |
 | Google Sheets read fails | Invalid credentials JSON or sheet not shared | Validate `GOOGLE_SHEETS_CREDENTIALS_JSON`, set `GOOGLE_SHEET_ID`, and share the sheet with the service account email (Editor access). |

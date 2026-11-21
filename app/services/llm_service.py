@@ -1,7 +1,8 @@
-"""Ollama service for LLM-powered gig content generation.
+"""NVIDIA service for LLM-powered gig content generation.
 
-Consumes :class:`app.config.Settings` (``OLLAMA_BASE_URL``) and talks to
-Ollama's OpenAI-compatible ``/chat/completions`` endpoint. All HTTP calls go
+Consumes :class:`app.config.Settings` (``NVIDIA_BASE_URL``,
+``NVIDIA_API_KEY``, ``NVIDIA_MODEL``) and talks to NVIDIA's
+OpenAI-compatible ``/chat/completions`` endpoint. All HTTP calls go
 through ``httpx`` and are mocked in tests — no real LLM calls are made
 during testing.
 """
@@ -16,19 +17,32 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "hermes3:3b"
 CHAT_PATH = "/chat/completions"
 
 
-class OllamaService:
-    """Client for generating and polishing gig content with Ollama."""
+class LLMService:
+    """Client for generating and polishing gig content with NVIDIA Nemotron."""
 
-    def __init__(self, base_url: str | None = None, model: str = DEFAULT_MODEL):
-        self.base_url = (base_url or settings.OLLAMA_BASE_URL).rstrip("/")
-        self.model = model
+    def __init__(
+        self,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        model: str | None = None,
+    ):
+        self.base_url = (base_url or settings.NVIDIA_BASE_URL).rstrip("/")
+        self.api_key = api_key or settings.NVIDIA_API_KEY
+        self.model = model or settings.NVIDIA_MODEL
 
     def _chat_url(self) -> str:
         return f"{self.base_url}{CHAT_PATH}"
+
+    def _headers(self) -> dict[str, str]:
+        headers: dict[str, str] = {
+            "Content-Type": "application/json",
+        }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
 
     async def generate(
         self,
@@ -49,7 +63,9 @@ class OllamaService:
             "stream": False,
         }
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(self._chat_url(), json=payload)
+            response = await client.post(
+                self._chat_url(), json=payload, headers=self._headers()
+            )
             response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
@@ -101,11 +117,11 @@ class OllamaService:
                     if isinstance(item, dict)
                 ][:5]
         except (json.JSONDecodeError, TypeError, AttributeError) as exc:
-            logger.warning("Failed to parse FAQ JSON from Ollama: %s", exc)
+            logger.warning("Failed to parse FAQ JSON from NVIDIA: %s", exc)
         return []
 
     async def suggest_tags(self, row: dict) -> list[str]:
-        """Suggest 5 tags for a gig; expects comma-separated output from Ollama."""
+        """Suggest 5 tags for a gig; expects comma-separated output from NVIDIA."""
         title = row.get("title", row.get("Gig Title", ""))
         category = row.get("category", row.get("Category", ""))
         system_prompt = (
@@ -123,7 +139,7 @@ class OllamaService:
         return tags[:5]
 
     async def health_check(self) -> bool:
-        """Return True if Ollama is reachable and can generate a completion."""
+        """Return True if NVIDIA is reachable and can generate a completion."""
         try:
             await self.generate(
                 [{"role": "user", "content": "Say OK"}],
@@ -132,5 +148,5 @@ class OllamaService:
             )
             return True
         except Exception as exc:  # noqa: BLE001 — any failure means unhealthy
-            logger.warning("Ollama health check failed: %s", exc)
+            logger.warning("NVIDIA health check failed: %s", exc)
             return False

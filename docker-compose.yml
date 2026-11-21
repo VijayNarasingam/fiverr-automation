@@ -19,14 +19,6 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    restart: unless-stopped
-
   frontend:
     build: ./frontend
     ports:
@@ -35,5 +27,4 @@ services:
       - app
     restart: unless-stopped
 
-volumes:
-  ollama-data:
+volumes: {}
