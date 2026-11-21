@@ -122,3 +122,79 @@ Run the test suite:
 ```bash
 pytest
 ```
+
+## Next Steps
+
+After you have the stack deployed, follow these steps to start using the agent:
+
+1. **Configure `.env`** — fill in `FIVERR_EMAIL`, `FIVERR_PASSWORD`, and (optionally) `FIVERR_2FA_SECRET`. See [Configuration](#configuration) and [Fiverr 2FA Setup](#fiverr-2fa-setup).
+2. **Start Ollama and pull a model** — the agent uses Ollama for local LLM content generation:
+   ```bash
+   docker compose up -d ollama
+   docker exec -it fiverr-agent-ollama-1 ollama pull hermes3:3b
+   ```
+   (Or run `ollama serve` locally and `ollama pull hermes3:3b`.)
+3. **Start all services:**
+   ```bash
+   docker compose up --build
+   ```
+4. **Initialize the database (one time):**
+   ```bash
+   python scripts/init_db.py
+   ```
+5. **Seed Google Sheets** (if using Sheets integration):
+   ```bash
+   python scripts/seed_sheets.py
+   ```
+   Make sure `GOOGLE_SHEETS_CREDENTIALS_JSON` and `GOOGLE_SHEET_ID` are set and the sheet is shared with the service account email.
+6. **Open the dashboard** at http://localhost:5173 and review the overview, gigs, orders, messages, analytics, settings, logs, and proxies pages.
+7. **Add gigs to Google Sheets** with a `Status` of `pending` (or `draft`), then run the gig creation cycle from the dashboard or via the API.
+8. **Review AI-generated content** before publishing — see the [Compliance](#compliance) note.
+9. **Monitor logs and analytics** in the dashboard to track published gigs, synced orders, and revenue.
+
+## Troubleshooting
+
+| Issue | Likely cause | Fix |
+|-------|--------------|-----|
+| Ollama connection refused | Ollama not running or wrong base URL | Confirm `OLLAMA_BASE_URL` in `.env`, start Ollama (`docker compose up -d ollama` or `ollama serve`), and pull a model (`ollama pull hermes3:3b`). |
+| Database connection error | Wrong `DATABASE_URL` or DB not initialized | Verify `DATABASE_URL` in `.env` and run `python scripts/init_db.py`. |
+| 2FA prompt blocks login | Missing or invalid `FIVERR_2FA_SECRET` | Get a valid TOTP secret from Fiverr and set it in `.env`. See [Fiverr 2FA Setup](#fiverr-2fa-setup). |
+| Google Sheets read fails | Invalid credentials JSON or sheet not shared | Validate `GOOGLE_SHEETS_CREDENTIALS_JSON`, set `GOOGLE_SHEET_ID`, and share the sheet with the service account email (Editor access). |
+| No proxies returned | `PROXY_API_URLS` empty or source down | Set `PROXY_API_URLS` to one or more working proxy list URLs (see [Proxy Sources](#proxy-sources)) and run proxy validation from the dashboard. |
+| Gig publish fails | Fiverr markup changed or rate limited | The agent logs the error; check the Logs page. Add a delay between gigs (`GIG_DELAY_SECONDS`) and lower `MAX_GIGS_PER_RUN`. |
+| Tests fail | Missing Playwright browsers or env | Run `pip install -r requirements.txt`, `playwright install`, then `pytest tests/ -v`. |
+| Frontend won't load | `node_modules` missing or dev server down | `cd frontend && npm install && npm run dev`, or use the Docker Compose `frontend` service (port 5173). |
+
+## Fiverr 2FA Setup
+
+The agent supports time-based one-time password (TOTP) two-factor authentication for Fiverr logins. When Fiverr prompts for a 2FA code during login, the agent reads `FIVERR_2FA_SECRET` from `.env` to generate the code.
+
+1. Log in to your Fiverr account in a browser.
+2. Go to **Account Settings** → **Security** → **Two-Factor Authentication**.
+3. Enable 2FA using an authenticator app (e.g., Google Authenticator, Authy, 1Password).
+4. Fiverr will display a QR code and/or a secret key. Copy the **secret key** (a base32 string such as `JBSWY3DPEHPK3PXP`).
+5. Paste the secret key into `FIVERR_2FA_SECRET` in your `.env` file:
+   ```
+   FIVERR_2FA_SECRET=JBSWY3DPEHPK3PXP
+   ```
+6. Restart the agent so it picks up the new value.
+
+> **Tip:** If you scan the QR code with your authenticator app, the app will reveal the underlying secret key you can copy into `.env`.
+
+## Proxy Sources
+
+Set `PROXY_API_URLS` in `.env` to a comma-separated list of proxy list API URLs. The agent fetches proxies from these URLs, validates them (example.com check), and rotates them round-robin for browser automation.
+
+Example (already in `.env.example`):
+```
+PROXY_API_URLS=https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&timeout=3000&country=all
+```
+
+Free proxy list sources you can add (comma-separated):
+
+- https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&timeout=3000&country=all
+- https://www.proxy-list.download/api/v1/get?type=http
+- https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt
+- https://raw.githubusercontent.com/mertguvencli/http-proxy-list/main/proxy-list/data.txt
+
+> **Note:** Free proxies are often unreliable and short-lived. Validate proxies from the dashboard before use, and consider residential or paid proxies for stable Fiverr automation. Rotate proxies responsibly to respect Fiverr's rate limits.
