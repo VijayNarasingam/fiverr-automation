@@ -18,17 +18,6 @@ function fetchOverview(): Promise<AnalyticsOverview> {
   return api.get<AnalyticsOverview>('/analytics/overview').then((res) => res.data);
 }
 
-function statusBadge(status: string): JSX.Element {
-  const lower = status.toLowerCase();
-  const classMap: Record<string, string> = {
-    published: 'badge-published',
-    pending: 'badge-pending',
-    draft: 'badge-draft',
-  };
-  const cls = classMap[lower] || 'badge';
-  return <span className={cls}>{status}</span>;
-}
-
 export default function Overview() {
   const { data: gigs = [], isLoading: gigsLoading } = useGigs();
   const { data: overview, isLoading: overviewLoading } = useQuery({
