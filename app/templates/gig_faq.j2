@@ -1,0 +1,11 @@
+# Frequently Asked Questions — {{ title }}
+
+{% if faqs %}
+{% for faq in faqs %}
+## Q: {{ faq.question }}
+
+{{ faq.answer }}
+{% endfor %}
+{% else %}
+*No FAQs available yet.*
+{% endif %}
