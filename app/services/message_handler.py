@@ -123,3 +123,52 @@ async def auto_reply(
         "details. In the meantime, feel free to share any additional "
         "requirements."
     )
+
+
+async def process_new_messages() -> list:
+    """Process inbound messages that have not been auto-replied yet.
+
+    For each inbound message with ``is_auto_replied`` False, generate a reply
+    via :func:`auto_reply` (when :func:`should_auto_reply` allows it),
+    persist an outbound :class:`Message` and mark the original as auto-replied.
+
+    Returns the list of :class:`Message` instances that were processed.
+    """
+    from sqlalchemy import select
+
+    from app.database import async_session
+    from app.models.message import Message, MessageDirection
+
+    processed: list[Message] = []
+
+    async with async_session() as db_session:
+        stmt = (
+            select(Message)
+            .where(Message.direction == MessageDirection.INBOUND)
+            .where(Message.is_auto_replied.is_(False))
+        )
+        result = await db_session.execute(stmt)
+        messages = result.scalars().all()
+
+        for message in messages:
+            if not should_auto_reply(message.content):
+                # Not eligible for auto-reply; mark as processed so we do not
+                # retry it on the next cycle.
+                message.is_auto_replied = True
+                continue
+
+            reply = await auto_reply(message.content)
+            outbound = Message(
+                order_id=message.order_id,
+                direction=MessageDirection.OUTBOUND,
+                content=reply,
+                is_auto_replied=True,
+            )
+            db_session.add(outbound)
+            message.is_auto_replied = True
+            processed.append(message)
+
+        await db_session.commit()
+
+    logger.info("Processed %d new messages", len(processed))
+    return processed
