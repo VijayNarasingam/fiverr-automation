@@ -27,6 +27,7 @@ _SENSITIVE_KEYS = {
 async def get_settings() -> dict[str, Any]:
     """Return current settings, masking sensitive values."""
     data = settings.model_dump()
+    data["discord_configured"] = bool(data.get("DISCORD_WEBHOOK_URL"))
     for key in _SENSITIVE_KEYS:
         if data.get(key):
             data[key] = "***"

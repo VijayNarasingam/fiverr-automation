@@ -16,16 +16,17 @@ import {
   BarChart,
   Settings as SettingsIcon,
   ClipboardList,
+  type LucideIcon,
 } from 'lucide-react';
 
-const navItems = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard },
-  { to: '/gigs', label: 'Gigs', icon: FileText },
-  { to: '/orders', label: 'Orders', icon: DollarSign },
-  { to: '/messages', label: 'Messages', icon: Mail },
-  { to: '/analytics', label: 'Analytics', icon: BarChart },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
-  { to: '/logs', label: 'Logs', icon: ClipboardList },
+const navItems: { to: string; label: string; Icon: LucideIcon }[] = [
+  { to: '/', label: 'Overview', Icon: LayoutDashboard },
+  { to: '/gigs', label: 'Gigs', Icon: FileText },
+  { to: '/orders', label: 'Orders', Icon: DollarSign },
+  { to: '/messages', label: 'Messages', Icon: Mail },
+  { to: '/analytics', label: 'Analytics', Icon: BarChart },
+  { to: '/settings', label: 'Settings', Icon: SettingsIcon },
+  { to: '/logs', label: 'Logs', Icon: ClipboardList },
 ];
 
 function NavLinkItem({ to, label, Icon }: { to: string; label: string; Icon: React.ComponentType }) {

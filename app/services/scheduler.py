@@ -4,6 +4,7 @@ Registers interval jobs (``max_instances=1`` so cycles never overlap):
 - gig creation: every 15 minutes
 - order sync: every 10 minutes
 - message cycle: every 5 minutes
+- proxy validation: every 1 hour
 
 Call :func:`build_scheduler` to get a configured (but not started)
 :class:`~apscheduler.schedulers.asyncio.AsyncIOScheduler`, or
@@ -15,12 +16,16 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.services.orchestrator import Orchestrator
+from app.services.proxy_manager import ProxyManager
 
 logger = logging.getLogger(__name__)
 
 GIG_CREATION_MINUTES = 15
 ORDER_SYNC_MINUTES = 10
 MESSAGE_CYCLE_MINUTES = 5
+PROXY_VALIDATION_HOURS = 1
+
+proxy_manager = ProxyManager()
 
 
 def build_scheduler(orchestrator: Orchestrator | None = None) -> AsyncIOScheduler:
@@ -61,12 +66,22 @@ def build_scheduler(orchestrator: Orchestrator | None = None) -> AsyncIOSchedule
         replace_existing=True,
         coalesce=True,
     )
+    scheduler.add_job(
+        proxy_manager.get_valid_proxies,
+        trigger="interval",
+        hours=PROXY_VALIDATION_HOURS,
+        id="proxy_validation",
+        max_instances=1,
+        replace_existing=True,
+        coalesce=True,
+    )
 
     logger.info(
-        "Registered automation jobs: gig_creation=%dmin, order_sync=%dmin, message=%dmin",
+        "Registered automation jobs: gig_creation=%dmin, order_sync=%dmin, message=%dmin, proxy_validation=%dhour",
         GIG_CREATION_MINUTES,
         ORDER_SYNC_MINUTES,
         MESSAGE_CYCLE_MINUTES,
+        PROXY_VALIDATION_HOURS,
     )
     return scheduler
 

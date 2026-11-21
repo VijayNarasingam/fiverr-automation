@@ -1,6 +1,6 @@
+import React from 'react';
 import { useMessages, useSendMessage } from '../hooks/useMessages';
-import type { SendMessageInput } from '../types';
-import { Send, Mail } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 function directionBadge(direction: string): JSX.Element {
   const lower = direction.toLowerCase();

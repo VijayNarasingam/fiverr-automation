@@ -12,6 +12,7 @@ import pytest
 
 from app.services import orchestrator
 from app.services.orchestrator import Orchestrator
+from app.services.proxy_manager import ProxyManager
 from app.services.scheduler import build_scheduler
 
 
@@ -230,7 +231,7 @@ async def test_run_message_cycle(async_session, mocker):
 
 
 def test_scheduler_job_registration(mocker):
-    """build_scheduler registers the three interval jobs and never starts them."""
+    """build_scheduler registers the four interval jobs and never starts them."""
     captured = []
 
     def fake_add_job(func, trigger, **kwargs):
@@ -244,24 +245,28 @@ def test_scheduler_job_registration(mocker):
     orch = Orchestrator()
     scheduler = build_scheduler(orchestrator=orch)
 
-    assert len(captured) == 3
+    assert len(captured) == 4
 
     ids = [c["kwargs"].get("id") for c in captured]
     assert "gig_creation_cycle" in ids
     assert "order_sync_cycle" in ids
     assert "message_cycle" in ids
+    assert "proxy_validation" in ids
 
     for c in captured:
         assert c["trigger"] == "interval"
         assert c["kwargs"]["max_instances"] == 1
         assert c["kwargs"]["replace_existing"] is True
 
-    minutes = {c["kwargs"]["id"]: c["kwargs"]["minutes"] for c in captured}
+    minutes = {c["kwargs"]["id"]: c["kwargs"].get("minutes") for c in captured}
     assert minutes["gig_creation_cycle"] == 15
     assert minutes["order_sync_cycle"] == 10
     assert minutes["message_cycle"] == 5
 
-    # Each job is bound to the supplied orchestrator instance.
+    hours = {c["kwargs"]["id"]: c["kwargs"].get("hours") for c in captured}
+    assert hours["proxy_validation"] == 1
+
+    # Each automation job is bound to the supplied orchestrator instance.
     bound = {
         c["kwargs"]["id"]: c["func"] for c in captured
     }
@@ -271,6 +276,8 @@ def test_scheduler_job_registration(mocker):
     assert bound["order_sync_cycle"].__func__ is Orchestrator.run_order_sync_cycle
     assert bound["message_cycle"].__self__ is orch
     assert bound["message_cycle"].__func__ is Orchestrator.run_message_cycle
+    # Proxy validation is bound to the module-level proxy manager instance.
+    assert bound["proxy_validation"].__func__ is ProxyManager.get_valid_proxies
 
     # Scheduler was built but not started (start is never invoked here).
     assert scheduler.state == 0  # STATE_STOPPED
