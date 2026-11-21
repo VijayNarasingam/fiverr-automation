@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models.gig import Gig
 from app.models.order import Order, OrderStatus
+from app.services.analytics_service import analyze_ab_test
 
 router = APIRouter(prefix="/api/analytics")
 
@@ -57,3 +58,12 @@ async def gig_performance(
         {"gig_id": gig_id, "title": title, "order_count": order_count}
         for gig_id, title, order_count in result.all()
     ]
+
+
+@router.get("/ab-tests/{gig_id}")
+async def ab_tests(
+    gig_id: int,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Return A/B test analysis for a gig."""
+    return await analyze_ab_test(session, gig_id)

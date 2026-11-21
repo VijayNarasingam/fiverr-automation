@@ -29,6 +29,19 @@ export interface AnalyticsOverview {
   revenue_cents: number;
 }
 
+export interface GigPerformance {
+  gig_id: number;
+  title: string;
+  order_count: number;
+}
+
+export interface AbTestResult {
+  gig_id: number;
+  winner: string | null;
+  confidence: number;
+  note: string;
+}
+
 export interface SendMessageInput {
   direction: string;
   content: string;
