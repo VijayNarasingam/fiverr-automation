@@ -5,13 +5,27 @@ import Overview from './pages/Overview';
 import Gigs from './pages/Gigs';
 import Orders from './pages/Orders';
 import Messages from './pages/Messages';
-import { LayoutDashboard, FileText, Mail, DollarSign } from 'lucide-react';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
+import Logs from './pages/Logs';
+import {
+  LayoutDashboard,
+  FileText,
+  Mail,
+  DollarSign,
+  BarChart,
+  Settings as SettingsIcon,
+  ClipboardList,
+} from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/gigs', label: 'Gigs', icon: FileText },
   { to: '/orders', label: 'Orders', icon: DollarSign },
   { to: '/messages', label: 'Messages', icon: Mail },
+  { to: '/analytics', label: 'Analytics', icon: BarChart },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+  { to: '/logs', label: 'Logs', icon: ClipboardList },
 ];
 
 function NavLinkItem({ to, label, Icon }: { to: string; label: string; Icon: React.ComponentType }) {
@@ -54,6 +68,9 @@ export default function App() {
               <Route path="/gigs" element={<Gigs />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/logs" element={<Logs />} />
             </Routes>
           </main>
         </div>
