@@ -43,7 +43,9 @@ function NavLinkItem({ to, label, Icon }: { to: string; label: string; Icon: Rea
         }`
       }
     >
-      <Icon size={18} className="mr-2" />
+      <span className="mr-2 w-4 h-4">
+        <Icon />
+      </span>
       {label}
     </NavLink>
   );

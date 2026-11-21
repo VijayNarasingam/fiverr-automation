@@ -7,15 +7,21 @@ Reads DATABASE_URL from the environment (.env) via app.config.settings.
 """
 
 import asyncio
+import sys
+from pathlib import Path
 
-from app.config import settings
-from app.database import Base, engine, init_db
+# Ensure the repository root is on sys.path so `app` imports resolve when
+# the script is run directly (e.g. `python scripts/init_db.py`).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app import database
+from app.config import settings  # noqa: E402
 
 
 async def main() -> None:
-    init_db(settings.DATABASE_URL)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    database.init_db(settings.DATABASE_URL)
+    async with database.engine.begin() as conn:
+        await conn.run_sync(database.Base.metadata.create_all)
     print("Database initialized")
 
 
